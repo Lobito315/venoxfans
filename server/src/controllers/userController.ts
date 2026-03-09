@@ -46,7 +46,10 @@ export const getTrendingCreators = async (req: Request, res: Response) => {
                 username: true,
                 avatarUrl: true,
                 bio: true,
-                subscriptionPrice: true
+                subscriptionPrice: true,
+                _count: {
+                    select: { subscribers: true }
+                }
             }
         });
 
@@ -54,5 +57,40 @@ export const getTrendingCreators = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const { username, avatarUrl, bio, subscriptionPrice, coverUrl } = req.body;
+
+        if (!username) {
+            return res.status(400).json({ error: 'Username is required to update profile' });
+        }
+
+        const user = await prisma.user.update({
+            where: { username },
+            data: {
+                ...(avatarUrl !== undefined && { avatarUrl }),
+                ...(bio !== undefined && { bio }),
+                ...(subscriptionPrice !== undefined && { subscriptionPrice }),
+                ...(coverUrl !== undefined && { coverUrl }),
+            },
+            select: {
+                id: true,
+                username: true,
+                avatarUrl: true,
+                coverUrl: true,
+                bio: true,
+                isCreator: true,
+                subscriptionPrice: true,
+                email: true,
+            }
+        });
+
+        res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error updating profile' });
     }
 };

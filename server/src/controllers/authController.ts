@@ -51,7 +51,7 @@ export const register = async (req: Request, res: Response) => {
 
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(201).json({ user: { id: user.id, username: user.username, email: user.email }, token });
+        res.status(201).json({ user: { id: user.id, username: user.username, email: user.email, isCreator: user.isCreator }, token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
@@ -74,7 +74,7 @@ export const login = async (req: Request, res: Response) => {
 
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
-        res.json({ user: { id: user.id, username: user.username, email: user.email }, token });
+        res.json({ user: { id: user.id, username: user.username, email: user.email, isCreator: user.isCreator }, token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
