@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String?
+  googleId      String?
+  avatarUrl     String?
+  coverUrl      String?
+  bio           String?
+  dateOfBirth   DateTime?
+  isCreator     Boolean   @default(false)
+  subscriptionPrice Float?  @default(0.0)
+  
+  posts         Post[]
+  subscriptions Subscription[] @relation("subscriber")
+  subscribers   Subscription[] @relation("creator")
+  messagesSent  Message[]      @relation("sender")
+  messagesRecv  Message[]      @relation("receiver")
+  purchases     Purchase[]
+  tipsSent      Tip[]          @relation("tipper")
+  tipsRecv      Tip[]          @relation("creator")
+  likes         Like[]
+  comments      Comment[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Post {
+  id           String    @id @default(uuid())
+  creatorId    String
+  creator      User      @relation(fields: [creatorId], references: [id])
+  content      String?
+  mediaUrls    String[]  // Cloud storage URLs (images/videos)
+  isPremium    Boolean   @default(false)
+  price        Float?    // PPV
+  
+  likes        Like[]
+  comments     Comment[]
+  purchasers   Purchase[]
+  
+  createdAt    DateTime  @default(now())
+}
+
+model Subscription {
+  id           String    @id @default(uuid())
+  subscriberId String
+  creatorId    String
+  subscriber   User      @relation("subscriber", fields: [subscriberId], references: [id])
+  creator      User      @relation("creator", fields: [creatorId], references: [id])
+  status       String    // ACTIVE, CANCELLED, EXPIRED
+  amount       Float
+  
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+}
+
+model Message {
+  id           String    @id @default(uuid())
+  senderId     String
+  receiverId   String
+  sender       User      @relation("sender", fields: [senderId], references: [id])
+  receiver     User      @relation("receiver", fields: [receiverId], references: [id])
+  content      String?
+  mediaUrl     String?
+  isPaid       Boolean   @default(false)
+  price        Float?
+  
+  createdAt    DateTime  @default(now())
+}
+
+model Purchase {
+  id           String    @id @default(uuid())
+  userId       String
+  postId       String?
+  messageId    String?
+  user         User      @relation(fields: [userId], references: [id])
+  post         Post?     @relation(fields: [postId], references: [id])
+  amount       Float
+  
+  createdAt    DateTime  @default(now())
+}
+
+model Tip {
+  id           String    @id @default(uuid())
+  tipperId     String
+  creatorId    String
+  tipper       User      @relation("tipper", fields: [tipperId], references: [id])
+  creator      User      @relation("creator", fields: [creatorId], references: [id])
+  amount       Float
+  message      String?
+  
+  createdAt    DateTime  @default(now())
+}
+
+model Like {
+  id           String    @id @default(uuid())
+  userId       String
+  postId       String
+  user         User      @relation(fields: [userId], references: [id])
+  post         Post      @relation(fields: [postId], references: [id])
+  createdAt    DateTime  @default(now())
+}
+
+model Comment {
+  id           String    @id @default(uuid())
+  userId       String
+  postId       String
+  content      String
+  user         User      @relation(fields: [userId], references: [id])
+  post         Post      @relation(fields: [postId], references: [id])
+  createdAt    DateTime  @default(now())
+}

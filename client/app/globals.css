@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-500: #8b5cf6; /* Violet */
+  --color-brand-600: #7c3aed;
+  --color-background: #0f1115; /* Deep dark bg */
+  --color-surface: #1e2128; /* Slightly lighter for cards */
+  --color-surface-hover: #2a2d36;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f1115;
+    --card: #f3f4f6;
+    --card-foreground: #0f1115;
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
+  }
+
+  /* Defaulting to dark mode for premium feel */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0f1115;
+      --foreground: #f9fafb;
+      --card: #1e2128;
+      --card-foreground: #f9fafb;
+      --primary: #8b5cf6;
+      --primary-foreground: #ffffff;
+    }
+  }
+
+  .dark {
+    --background: #0f1115;
+    --foreground: #f9fafb;
+    --card: #1e2128;
+    --card-foreground: #f9fafb;
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased transition-colors duration-300;
+  }
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(30, 33, 40, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gradient-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500;
+}
