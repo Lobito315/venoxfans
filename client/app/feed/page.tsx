@@ -166,8 +166,8 @@ export default function FeedPage() {
 
                                 {/* Media Handling */}
                                 {post.mediaUrls?.[0] && !post.isPremium && (
-                                    <div className="rounded-xl overflow-hidden bg-black max-h-[500px] flex items-center justify-center border border-white/5">
-                                        <img src={post.mediaUrls[0]} alt="Post content" className="object-cover max-w-full" />
+                                    <div className="rounded-xl overflow-hidden bg-black max-h-[600px] w-full flex items-center justify-center border border-white/5">
+                                        <img src={post.mediaUrls[0]} alt="Post content" className="object-contain max-w-full max-h-[600px] w-auto h-auto" />
                                     </div>
                                 )}
 

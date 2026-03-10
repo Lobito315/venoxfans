@@ -363,7 +363,7 @@ export default function CreatorProfilePage() {
                                         <img
                                             src={thumb}
                                             alt="Post"
-                                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                            className="w-full h-full object-contain bg-black group-hover:scale-105 transition duration-500"
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-gradient-to-br from-[#d948ef]/20 to-[#7c3aed]/10 flex items-center justify-center p-4 text-center">
