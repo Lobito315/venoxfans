@@ -18,7 +18,7 @@ export default function ExplorePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/creators/trending')
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/creators/trending`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setCreators(data);

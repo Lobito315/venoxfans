@@ -140,13 +140,14 @@ export default function CreatorProfilePage() {
 
     useEffect(() => {
         if (!username) return;
-        fetch(`http://localhost:5000/api/users/${username}`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/${username}`)
             .then(res => res.json())
             .then(data => {
                 if (data && !data.error) {
                     setCreator(data);
-                    return fetch(`http://localhost:5000/api/posts/creator/${data.id}`);
+                    return fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/creator/${data.id}`);
                 }
+                return Promise.resolve(null); // If no creator found or error, prevent next .then from trying to fetch posts
             })
             .then(res => res?.json())
             .then(data => {
