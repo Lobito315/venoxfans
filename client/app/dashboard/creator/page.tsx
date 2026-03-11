@@ -230,7 +230,11 @@ export default function CreatorDashboard() {
                                     <div className="flex gap-3 overflow-x-auto pb-2 mt-3">
                                         {mediaFiles.map((media, index) => (
                                             <div key={index} className="relative w-24 h-24 flex-shrink-0 group rounded-xl overflow-hidden border border-white/10">
-                                                <img src={media.url} alt="Preview" className="w-full h-full object-cover" />
+                                                {media.file.type.startsWith('video/') ? (
+                                                    <video src={media.url} className="w-full h-full object-cover" muted />
+                                                ) : (
+                                                    <img src={media.url} alt="Preview" className="w-full h-full object-cover" />
+                                                )}
                                                 <button
                                                     onClick={() => removeMedia(index)}
                                                     className="absolute top-1.5 right-1.5 bg-black/70 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition hover:bg-red-600"

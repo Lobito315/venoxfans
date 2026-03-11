@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -46,9 +49,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
-        <AppShell footer={footer}>
-          {children}
-        </AppShell>
+        <GoogleOAuthProvider clientId={clientId}>
+          <AppShell footer={footer}>
+            {children}
+          </AppShell>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

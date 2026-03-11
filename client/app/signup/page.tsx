@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -56,6 +57,37 @@ export default function SignupPage() {
             alert(error.message);
         }
     };
+
+    const signupWithGoogle = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: tokenResponse.access_token }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Google signup failed');
+                }
+
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                // Always push to user dashboard on google signup flow since google accounts have no built-in "creator" toggle initially
+                router.push('/dashboard/user');
+                
+            } catch (err: any) {
+                console.error('Google Signup Error:', err);
+                alert(err.message || 'Google signup failed');
+            }
+        },
+        onError: () => {
+            alert('Google signup failed or was cancelled');
+        }
+    });
 
     return (
         <div className="min-h-[calc(100vh-80px)] flex flex-col justify-center py-12 sm:px-6 lg:px-8"
@@ -172,9 +204,12 @@ export default function SignupPage() {
                         </div>
 
                         <div className="mt-6">
-                            <button className="w-full flex items-center justify-center px-4 py-3 border border-[#d948ef]/20 rounded-full shadow-sm bg-[#1f1022]/50 text-sm font-medium text-white hover:bg-[#d948ef]/10 transition-colors">
+                            <button 
+                                onClick={() => signupWithGoogle()}
+                                className="w-full flex items-center justify-center px-4 py-3 border border-[#d948ef]/20 rounded-full shadow-sm bg-[#1f1022]/50 text-sm font-medium text-white hover:bg-[#d948ef]/10 transition-colors"
+                            >
                                 <img className="h-5 w-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
-                                Google
+                                Continue with Google
                             </button>
                         </div>
                     </div>

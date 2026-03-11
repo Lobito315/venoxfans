@@ -4,6 +4,10 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../index';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy-client-id');
+
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -80,3 +84,81 @@ export const login = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+export const googleLogin = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.body;
+        
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id'
+        });
+        
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return res.status(400).json({ error: 'Invalid Google token' });
+        }
+        
+        const { sub: googleId, email, name, picture } = payload;
+        
+        // Find or create user
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { googleId },
+                    { email }
+                ]
+            }
+        });
+        
+        if (!user) {
+            // Create a new user from Google profile
+            // Format a default username from email or name
+            const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') ||
+                name?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 
+                `user${Math.floor(Math.random() * 10000)}`;
+                
+            let username = baseUsername;
+            let counter = 1;
+            
+            // Ensure unique username
+            while (await prisma.user.findUnique({ where: { username } })) {
+                username = `${baseUsername}${counter}`;
+                counter++;
+            }
+            
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    username,
+                    googleId,
+                    avatarUrl: picture,
+                    isCreator: false // Default to regular user
+                }
+            });
+        } else if (!user.googleId) {
+            // Update existing user with Google ID
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: { googleId, avatarUrl: user.avatarUrl || picture }
+            });
+        }
+        
+        const jwtToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.json({ 
+            user: { 
+                id: user.id, 
+                username: user.username, 
+                email: user.email, 
+                isCreator: user.isCreator 
+            }, 
+            token: jwtToken 
+        });
+        
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(500).json({ error: 'Google login failed' });
+    }
+};
+
