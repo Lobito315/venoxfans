@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,10 @@ RUN npx prisma generate
 RUN npm run build
 
 # --- Production Stage ---
-FROM node:20-alpine
+FROM node:20-slim
+
+# Install system dependencies
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
