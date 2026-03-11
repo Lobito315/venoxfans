@@ -168,7 +168,7 @@ export default function FeedPage() {
                                 {/* Media Handling */}
                                 {post.mediaUrls?.[0] && !post.isPremium && (
                                     <div className="rounded-xl overflow-hidden bg-black max-h-[600px] w-full flex items-center justify-center border border-white/5 cursor-pointer" onClick={() => { setSelectedPost(post); fetchComments(post.id); }}>
-                                        {post.mediaUrls[0].startsWith('data:video/') ? (
+                                        {(post.mediaUrls[0].startsWith('data:video/') || post.mediaUrls[0].match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
                                             <video src={post.mediaUrls[0]} controls className="max-w-full max-h-[600px] w-auto h-auto" />
                                         ) : (
                                             <img src={post.mediaUrls[0]} alt="Post content" className="object-contain max-w-full max-h-[600px] w-auto h-auto" />
@@ -236,7 +236,7 @@ export default function FeedPage() {
                             {/* Left Side: Media */}
                             <div className="w-full md:w-3/5 lg:w-2/3 max-h-[50vh] md:max-h-none bg-black flex items-center justify-center overflow-hidden relative">
                                 {currentPost.mediaUrls?.[0] ? (
-                                    currentPost.mediaUrls[0].startsWith('data:video/') ? (
+                                    (currentPost.mediaUrls[0].startsWith('data:video/') || currentPost.mediaUrls[0].match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
                                         <video src={currentPost.mediaUrls[0]} controls autoPlay className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />
                                     ) : (
                                         <img src={currentPost.mediaUrls[0]} alt="Post" className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />

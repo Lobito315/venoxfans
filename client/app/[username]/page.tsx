@@ -361,7 +361,7 @@ export default function CreatorProfilePage() {
                             return (
                                 <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-surface" onClick={() => { setSelectedPost(post); fetchComments(post.id); }}>
                                     {thumb ? (
-                                        thumb.startsWith('data:video/') ? (
+                                        (thumb.startsWith('data:video/') || thumb.match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
                                             <video src={thumb} className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500" muted />
                                         ) : (
                                             <img
@@ -415,7 +415,7 @@ export default function CreatorProfilePage() {
                             {/* Left Side: Media */}
                             <div className="w-full md:w-3/5 lg:w-2/3 max-h-[50vh] md:max-h-none bg-black flex items-center justify-center overflow-hidden relative">
                                 {currentPost.mediaUrls?.[0] ? (
-                                    currentPost.mediaUrls[0].startsWith('data:video/') ? (
+                                    (currentPost.mediaUrls[0].startsWith('data:video/') || currentPost.mediaUrls[0].match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
                                         <video src={currentPost.mediaUrls[0]} controls autoPlay className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />
                                     ) : (
                                         <img src={currentPost.mediaUrls[0]} alt="Post" className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />
