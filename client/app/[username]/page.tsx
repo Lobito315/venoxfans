@@ -77,7 +77,7 @@ export default function CreatorProfilePage() {
     }, []);
 
     const fetchComments = (postId: string) => {
-        fetch(`http://localhost:5000/api/posts/${postId}/comments`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}/comments`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setComments(data);
@@ -90,7 +90,7 @@ export default function CreatorProfilePage() {
             return;
         }
 
-        fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}/like`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id })
@@ -122,7 +122,7 @@ export default function CreatorProfilePage() {
         }
 
         setCommentLoading(true);
-        fetch(`http://localhost:5000/api/posts/${selectedPostId}/comment`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${selectedPostId}/comment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id, content: newComment })

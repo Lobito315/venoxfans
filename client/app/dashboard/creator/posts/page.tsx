@@ -34,7 +34,7 @@ export default function CreatorPosts() {
     const fetchPosts = async (id: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/posts/creator/${id}`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/creator/${id}`);
             const data = await res.json();
             if (Array.isArray(data)) setPosts(data);
         } catch (e) { }
@@ -45,7 +45,7 @@ export default function CreatorPosts() {
         if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
         setDeleting(postId);
         try {
-            const res = await fetch(`http://localhost:5000/api/posts/${postId}`, { method: 'DELETE' });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}`, { method: 'DELETE' });
             if (res.ok) {
                 setPosts(prev => prev.filter(p => p.id !== postId));
             } else {
