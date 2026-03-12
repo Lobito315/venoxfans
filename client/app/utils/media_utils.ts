@@ -19,11 +19,12 @@ export const isVideoUrl = (url: string | null | undefined): boolean => {
         }
     }
     
-    // 3. Extension check
-    if (cleanUrl.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) return true;
+    // 3. Extension check (Added gif, webp as anim, m3u8, etc.)
+    if (cleanUrl.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi|gif|m3u8|h264)(?:\?|$)/i)) return true;
     
-    // 4. Content sniffing for ANY data URL that isn't explicitly an image
+    // 4. Content sniffing for ANY data URL that isn't explicitly an image (unless it's a gif)
     if (cleanUrl.startsWith('data:')) {
+        if (cleanUrl.startsWith('data:image/gif')) return true;
         const base64Part = cleanUrl.split(',')[1] || '';
         if (base64Part.startsWith('AAAA') || base64Part.startsWith('GkXf')) return true;
     }
