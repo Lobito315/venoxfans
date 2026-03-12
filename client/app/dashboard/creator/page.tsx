@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '../../utils/apiConfig';
 
 const NAV_LINKS = [
     { href: '/dashboard/creator', label: 'Overview', icon: '◈' },
@@ -96,7 +97,7 @@ export default function CreatorDashboard() {
         try {
             const mediaUrls = await Promise.all(mediaFiles.map(async (m) => {
                 // 1. Get presigned URL
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/upload-url?fileName=${encodeURIComponent(m.file.name)}&contentType=${encodeURIComponent(m.file.type || 'application/octet-stream')}`);
+                const res = await fetch(`${getApiUrl()}/api/posts/upload-url?fileName=${encodeURIComponent(m.file.name)}&contentType=${encodeURIComponent(m.file.type || 'application/octet-stream')}`);
                 if (!res.ok) throw new Error('Failed to get upload permission');
                 const { uploadUrl, fileUrl } = await res.json();
 
@@ -112,7 +113,7 @@ export default function CreatorDashboard() {
                 return fileUrl;
             }));
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts`, {
+            const res = await fetch(`${getApiUrl()}/api/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
