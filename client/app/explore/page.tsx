@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { getApiUrl } from '../utils/apiConfig';
 
 // Mock data for display purposes
 const CATEGORIES = ['All', 'Fitness', 'Music', 'Gaming', 'Art', 'Lifestyle', 'Education', 'Cosplay'];
@@ -18,7 +19,7 @@ export default function ExplorePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/creators/trending`)
+        fetch(`${getApiUrl()}/api/creators/trending`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setCreators(data);

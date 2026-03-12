@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { isVideoUrl, getCleanMediaUrl } from '../utils/media_utils';
+import { getApiUrl } from '../utils/apiConfig';
 
 interface Creator {
     id: string;
@@ -79,7 +80,7 @@ export default function CreatorProfilePage() {
     }, []);
 
     const fetchComments = (postId: string) => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}/comments`)
+        fetch(`${getApiUrl()}/api/posts/${postId}/comments`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setComments(data);
@@ -92,7 +93,7 @@ export default function CreatorProfilePage() {
             return;
         }
 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}/like`, {
+        fetch(`${getApiUrl()}/api/posts/${postId}/like`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id })
@@ -125,7 +126,7 @@ export default function CreatorProfilePage() {
         }
 
         setCommentLoading(true);
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${selectedPostId}/comment`, {
+        fetch(`${getApiUrl()}/api/posts/${selectedPostId}/comment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id, content: newComment })
@@ -143,12 +144,12 @@ export default function CreatorProfilePage() {
 
     useEffect(() => {
         if (!username) return;
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/${username}`)
+        fetch(`${getApiUrl()}/api/users/${username}`)
             .then(res => res.json())
             .then(data => {
                 if (data && !data.error) {
                     setCreator(data);
-                    return fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/creator/${data.id}`);
+                    return fetch(`${getApiUrl()}/api/posts/creator/${data.id}`);
                 }
                 return Promise.resolve(null); // If no creator found or error, prevent next .then from trying to fetch posts
             })

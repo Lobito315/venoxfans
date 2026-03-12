@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
+import { getApiUrl } from '../utils/apiConfig';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function SignupPage() {
         const password = formData.get('password');
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+            const res = await fetch(`${getApiUrl()}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password, role, dateOfBirth: role === 'creator' ? dateOfBirth : undefined }),
@@ -61,7 +62,7 @@ export default function SignupPage() {
     const signupWithGoogle = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google`, {
+                const res = await fetch(`${getApiUrl()}/api/auth/google`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: tokenResponse.access_token }),
