@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { isVideoUrl, getCleanMediaUrl } from '../utils/media_utils';
 
 interface Post {
     id: string;
@@ -195,13 +196,13 @@ export default function FeedPage() {
                                 {/* Media Handling */}
                                 {post.mediaUrls?.[0] && !post.isPremium && (
                                     <div className="rounded-xl overflow-hidden bg-black max-h-[600px] w-full flex items-center justify-center border border-white/5 cursor-pointer" onClick={() => { setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}>
-                                        {(post.mediaUrls[0].startsWith('data:video/') || post.mediaUrls[0].includes('video/') || post.mediaUrls[0].match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) ? (
+                                        {isVideoUrl(post.mediaUrls[0]) ? (
                                             <div className="w-full h-full relative">
-                                                <video src={post.mediaUrls[0]} controls className="max-w-full max-h-[600px] w-auto h-auto" />
+                                                <video src={getCleanMediaUrl(post.mediaUrls[0])} controls className="max-w-full max-h-[600px] w-auto h-auto" />
                                                 <div className="absolute top-3 right-3 bg-black/50 px-2 py-1 rounded text-[10px] text-white font-bold pointer-events-none">VIDEO</div>
                                             </div>
                                         ) : (
-                                            <img src={post.mediaUrls[0]} alt="Post content" className="object-contain max-w-full max-h-[600px] w-auto h-auto" />
+                                            <img src={getCleanMediaUrl(post.mediaUrls[0])} alt="Post content" className="object-contain max-w-full max-h-[600px] w-auto h-auto" />
                                         )}
                                     </div>
                                 )}
@@ -292,8 +293,9 @@ export default function FeedPage() {
                                 {currentPost.mediaUrls?.length > 0 ? (
                                     <>
                                         {(() => {
-                                            const url = currentPost.mediaUrls[currentMediaIndex] || currentPost.mediaUrls[0];
-                                            const isVideo = url.startsWith('data:video/') || url.includes('video/') || url.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i);
+                                            const rawUrl = currentPost.mediaUrls[currentMediaIndex] || currentPost.mediaUrls[0];
+                                            const url = getCleanMediaUrl(rawUrl);
+                                            const isVideo = isVideoUrl(url);
                                             
                                             return isVideo ? (
                                                 <video 

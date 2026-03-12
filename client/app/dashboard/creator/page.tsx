@@ -99,9 +99,11 @@ export default function CreatorDashboard() {
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         let result = reader.result as string;
-                        // Fix generic mime type if we know it's a video file
-                        if (result.startsWith('data:application/octet-stream') && m.file.name.match(/\.(mp4|mov|webm|ogg|m4v|3gp|mkv|avi)$/i)) {
-                            result = result.replace('data:application/octet-stream', 'data:video/mp4');
+                        // Fix generic or incorrect mime type if we know it's a video file by extension
+                        const isVideoExt = m.file.name.match(/\.(mp4|mov|webm|ogg|m4v|3gp|mkv|avi)$/i);
+                        if (isVideoExt && (result.startsWith('data:application/octet-stream') || result.startsWith('data:image/'))) {
+                            // If it's a video extension but identified as image or octet-stream, force video/mp4 (most compatible)
+                            result = result.replace(/^data:[^;]+/, 'data:video/mp4');
                         }
                         resolve(result);
                     };

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { isVideoUrl, getCleanMediaUrl } from '../utils/media_utils';
 
 interface Creator {
     id: string;
@@ -362,16 +363,16 @@ export default function CreatorProfilePage() {
                             return (
                                 <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-surface" onClick={() => { setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}>
                                     {thumb ? (
-                                        (thumb.startsWith('data:video/') || thumb.includes('video/') || thumb.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) ? (
+                                        isVideoUrl(thumb) ? (
                                             <div className="w-full h-full relative">
-                                                <video src={thumb} className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500" muted />
+                                                <video src={getCleanMediaUrl(thumb)} className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500" muted />
                                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <span className="text-white text-3xl">▶</span>
                                                 </div>
                                             </div>
                                         ) : (
                                             <img
-                                                src={thumb}
+                                                src={getCleanMediaUrl(thumb)}
                                                 alt="Post"
                                                 className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500"
                                             />
@@ -423,8 +424,9 @@ export default function CreatorProfilePage() {
                                 {currentPost.mediaUrls?.length > 0 ? (
                                     <>
                                         {(() => {
-                                            const url = currentPost.mediaUrls[currentMediaIndex] || currentPost.mediaUrls[0];
-                                            const isVideo = url.startsWith('data:video/') || url.includes('video/') || url.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i);
+                                            const rawUrl = currentPost.mediaUrls[currentMediaIndex] || currentPost.mediaUrls[0];
+                                            const url = getCleanMediaUrl(rawUrl);
+                                            const isVideo = isVideoUrl(url);
                                             
                                             return isVideo ? (
                                                 <video 
