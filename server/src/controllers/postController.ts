@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../index';
+import { generatePresignedUrl } from '../services/s3Service';
 
 export const getFeed = async (req: Request, res: Response) => {
     try {
@@ -150,5 +151,19 @@ export const getPostComments = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error getting comments' });
+    }
+};
+
+export const getUploadUrl = async (req: Request, res: Response) => {
+    try {
+        const { fileName, contentType } = req.query;
+        if (!fileName || !contentType) {
+            return res.status(400).json({ error: 'Missing fileName or contentType' });
+        }
+        const data = await generatePresignedUrl(fileName as string, contentType as string);
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error generating upload URL' });
     }
 };

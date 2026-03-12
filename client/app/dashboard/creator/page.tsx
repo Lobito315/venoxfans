@@ -94,22 +94,23 @@ export default function CreatorDashboard() {
 
         setIsPublishing(true);
         try {
-            const base64Media = await Promise.all(mediaFiles.map(m =>
-                new Promise<string>(resolve => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        let result = reader.result as string;
-                        // Fix generic or incorrect mime type if we know it's a video file by extension
-                        const isVideoExt = m.file.name.match(/\.(mp4|mov|webm|ogg|m4v|3gp|mkv|avi)$/i);
-                        if (isVideoExt && (result.startsWith('data:application/octet-stream') || result.startsWith('data:image/'))) {
-                            // If it's a video extension but identified as image or octet-stream, force video/mp4 (most compatible)
-                            result = result.replace(/^data:[^;]+/, 'data:video/mp4');
-                        }
-                        resolve(result);
-                    };
-                    reader.readAsDataURL(m.file);
-                })
-            ));
+            const mediaUrls = await Promise.all(mediaFiles.map(async (m) => {
+                // 1. Get presigned URL
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/upload-url?fileName=${encodeURIComponent(m.file.name)}&contentType=${encodeURIComponent(m.file.type || 'application/octet-stream')}`);
+                if (!res.ok) throw new Error('Failed to get upload permission');
+                const { uploadUrl, fileUrl } = await res.json();
+
+                // 2. Upload directly to S3
+                const uploadRes = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': m.file.type || 'application/octet-stream' },
+                    body: m.file
+                });
+
+                if (!uploadRes.ok) throw new Error(`Failed to upload ${m.file.name}`);
+                
+                return fileUrl;
+            }));
 
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts`, {
                 method: 'POST',
@@ -117,7 +118,7 @@ export default function CreatorDashboard() {
                 body: JSON.stringify({
                     creatorId: userId,
                     content,
-                    mediaUrls: base64Media,
+                    mediaUrls,
                     isPremium,
                     price: isPremium ? parseFloat(price) : null
                 })
@@ -128,7 +129,7 @@ export default function CreatorDashboard() {
                 throw new Error(data.error || 'Failed to publish');
             }
 
-            alert('Post published successfully!');
+            alert('Post published successfully to the cloud! 🚀');
             setContent('');
             setMediaFiles([]);
             setIsPremium(false);

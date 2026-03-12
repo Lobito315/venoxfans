@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getFeed, getCreatorPosts, createPost, deletePost, toggleLike, addComment, getPostComments } from '../controllers/postController';
+import { getFeed, getCreatorPosts, createPost, deletePost, toggleLike, addComment, getPostComments, getUploadUrl } from '../controllers/postController';
 
 const router = Router();
 
@@ -9,6 +9,7 @@ router.post('/', createPost);
 router.delete('/:id', deletePost);
 
 // Like & Comment
+router.get('/upload-url', getUploadUrl);
 router.post('/:id/like', toggleLike);
 router.post('/:id/comment', addComment);
 router.get('/:id/comments', getPostComments);
