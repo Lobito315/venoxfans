@@ -360,7 +360,7 @@ export default function CreatorProfilePage() {
                             }
 
                             return (
-                                <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-surface" onClick={() => { setSelectedPost(post); fetchComments(post.id); }}>
+                                <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-surface" onClick={() => { setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}>
                                     {thumb ? (
                                         (thumb.startsWith('data:video/') || thumb.includes('video/') || thumb.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) ? (
                                             <div className="w-full h-full relative">
@@ -392,7 +392,7 @@ export default function CreatorProfilePage() {
                                                 <span>❤️</span> {post._count?.likes || 0}
                                             </button>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setSelectedPost(post); fetchComments(post.id); }}
+                                                onClick={(e) => { e.stopPropagation(); setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}
                                                 className="flex items-center gap-1 hover:text-[#d948ef] transition-colors"
                                             >
                                                 <span>💬</span> {post._count?.comments || 0}

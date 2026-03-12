@@ -168,7 +168,7 @@ export default function FeedPage() {
 
                                 {/* Media Handling */}
                                 {post.mediaUrls?.[0] && !post.isPremium && (
-                                    <div className="rounded-xl overflow-hidden bg-black max-h-[600px] w-full flex items-center justify-center border border-white/5 cursor-pointer" onClick={() => { setSelectedPost(post); fetchComments(post.id); }}>
+                                    <div className="rounded-xl overflow-hidden bg-black max-h-[600px] w-full flex items-center justify-center border border-white/5 cursor-pointer" onClick={() => { setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}>
                                         {(post.mediaUrls[0].startsWith('data:video/') || post.mediaUrls[0].includes('video/') || post.mediaUrls[0].match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) ? (
                                             <div className="w-full h-full relative">
                                                 <video src={post.mediaUrls[0]} controls className="max-w-full max-h-[600px] w-auto h-auto" />
@@ -210,7 +210,7 @@ export default function FeedPage() {
                                     <span className="text-xs font-semibold">{post._count?.likes || 0}</span>
                                 </button>
                                 <button
-                                    onClick={() => { setSelectedPost(post); fetchComments(post.id); }}
+                                    onClick={() => { setSelectedPost(post); setCurrentMediaIndex(0); fetchComments(post.id); }}
                                     className="flex items-center gap-2 text-gray-400 hover:text-[#d948ef] transition-colors group"
                                 >
                                     <span className="group-hover:scale-125 transition-transform duration-200">💬</span>
