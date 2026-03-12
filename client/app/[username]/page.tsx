@@ -60,6 +60,7 @@ export default function CreatorProfilePage() {
 
     // Interactions
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [commentLoading, setCommentLoading] = useState(false);
@@ -361,8 +362,13 @@ export default function CreatorProfilePage() {
                             return (
                                 <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group cursor-pointer relative bg-surface" onClick={() => { setSelectedPost(post); fetchComments(post.id); }}>
                                     {thumb ? (
-                                        (thumb.startsWith('data:video/') || thumb.match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
-                                            <video src={thumb} className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500" muted />
+                                        (thumb.startsWith('data:video/') || thumb.includes('video/') || thumb.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i)) ? (
+                                            <div className="w-full h-full relative">
+                                                <video src={thumb} className="w-full h-full object-cover bg-black group-hover:scale-105 transition duration-500" muted />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span className="text-white text-3xl">▶</span>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <img
                                                 src={thumb}
@@ -412,14 +418,55 @@ export default function CreatorProfilePage() {
                         </button>
                         
                         <div className="relative w-full max-w-6xl h-full max-h-[90vh] bg-[#1a0f1e] border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-200">
-                            {/* Left Side: Media */}
-                            <div className="w-full md:w-3/5 lg:w-2/3 max-h-[50vh] md:max-h-none bg-black flex items-center justify-center overflow-hidden relative">
-                                {currentPost.mediaUrls?.[0] ? (
-                                    (currentPost.mediaUrls[0].startsWith('data:video/') || currentPost.mediaUrls[0].match(/\.(mp4|webm|ogg|mov)(?:\?|$)/i)) ? (
-                                        <video src={currentPost.mediaUrls[0]} controls autoPlay className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />
-                                    ) : (
-                                        <img src={currentPost.mediaUrls[0]} alt="Post" className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" />
-                                    )
+                            {/* Left Side: Media Carousel */}
+                            <div className="w-full md:w-3/5 lg:w-2/3 max-h-[50vh] md:max-h-none bg-black flex items-center justify-center overflow-hidden relative group/media">
+                                {currentPost.mediaUrls?.length > 0 ? (
+                                    <>
+                                        {(() => {
+                                            const url = currentPost.mediaUrls[currentMediaIndex] || currentPost.mediaUrls[0];
+                                            const isVideo = url.startsWith('data:video/') || url.includes('video/') || url.match(/\.(mp4|webm|ogg|mov|m4v|3gp|mkv|avi)(?:\?|$)/i);
+                                            
+                                            return isVideo ? (
+                                                <video 
+                                                    key={url}
+                                                    src={url} 
+                                                    controls 
+                                                    autoPlay 
+                                                    className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" 
+                                                />
+                                            ) : (
+                                                <img 
+                                                    key={url}
+                                                    src={url} 
+                                                    alt="Post" 
+                                                    className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]" 
+                                                />
+                                            );
+                                        })()}
+
+                                        {/* Carousel Controls */}
+                                        {currentPost.mediaUrls.length > 1 && (
+                                            <>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setCurrentMediaIndex(prev => (prev > 0 ? prev - 1 : currentPost.mediaUrls.length - 1)); }}
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-[#d948ef]/80 rounded-full flex items-center justify-center text-white opacity-0 group-hover/media:opacity-100 transition-all z-20"
+                                                >
+                                                    ←
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setCurrentMediaIndex(prev => (prev < currentPost.mediaUrls.length - 1 ? prev + 1 : 0)); }}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-[#d948ef]/80 rounded-full flex items-center justify-center text-white opacity-0 group-hover/media:opacity-100 transition-all z-20"
+                                                >
+                                                    →
+                                                </button>
+                                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                                                    {currentPost.mediaUrls.map((_, i) => (
+                                                        <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentMediaIndex ? 'bg-[#d948ef] w-4' : 'bg-white/40'}`} />
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-[#d948ef]/20 to-[#7c3aed]/10 flex items-center justify-center p-8 text-center min-h-[30vh]">
                                         <p className="text-lg md:text-2xl text-white font-medium">{currentPost.content}</p>
