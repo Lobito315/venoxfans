@@ -40,7 +40,10 @@ function timeAgo(dateStr: string) {
 export default function FeedPage() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
     // Interactions
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -60,15 +63,38 @@ export default function FeedPage() {
             }
         }
 
-        // Fetch feed
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/feed`)
+        fetchPosts(1, true);
+    }, []);
+
+    const fetchPosts = (pageToFetch: number, isInitial = false) => {
+        if (isInitial) setLoading(true);
+        else setLoadingMore(true);
+
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/feed?page=${pageToFetch}&limit=10`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) setPosts(data);
+                const fetchedPosts = data.posts || [];
+                if (isInitial) {
+                    setPosts(fetchedPosts);
+                } else {
+                    setPosts(prev => [...prev, ...fetchedPosts]);
+                }
+                
+                setHasMore(pageToFetch < (data.metadata?.totalPages || 1));
+                setPage(pageToFetch);
                 setLoading(false);
+                setLoadingMore(false);
             })
-            .catch(() => setLoading(false));
-    }, []);
+            .catch(() => {
+                setLoading(false);
+                setLoadingMore(false);
+            });
+    };
+
+    const loadMore = () => {
+        if (loadingMore || !hasMore) return;
+        fetchPosts(page + 1);
+    };
 
     const fetchComments = (postId: string) => {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}/comments`)
@@ -223,6 +249,30 @@ export default function FeedPage() {
                             </div>
                         </div>
                     ))
+                )}
+
+                {/* Pagination Controls */}
+                {!loading && hasMore && (
+                    <div className="flex justify-center py-8">
+                        <button 
+                            onClick={loadMore}
+                            disabled={loadingMore}
+                            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-3 rounded-full transition-all flex items-center gap-2 group"
+                        >
+                            {loadingMore ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <span className="group-hover:translate-y-1 transition-transform">⬇️</span>
+                            )}
+                            {loadingMore ? 'Loading journey...' : 'Load more adventures'}
+                        </button>
+                    </div>
+                )}
+
+                {!loading && !hasMore && posts.length > 0 && (
+                    <div className="text-center py-12 opacity-30 select-none">
+                        <p className="text-xs uppercase tracking-[0.2em]">You've reached the edge of the universe</p>
+                    </div>
                 )}
             </div>
 

@@ -3,20 +3,36 @@ import { prisma } from '../index';
 
 export const getFeed = async (req: Request, res: Response) => {
     try {
-        const posts = await prisma.post.findMany({
-            take: 20,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                creator: {
-                    select: { id: true, username: true, avatarUrl: true }
-                },
-                _count: {
-                    select: { likes: true, comments: true }
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        const [posts, total] = await Promise.all([
+            prisma.post.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    creator: {
+                        select: { id: true, username: true, avatarUrl: true }
+                    },
+                    _count: {
+                        select: { likes: true, comments: true }
+                    }
                 }
+            }),
+            prisma.post.count()
+        ]);
+
+        res.json({
+            posts,
+            metadata: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
             }
         });
-
-        res.json(posts);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
