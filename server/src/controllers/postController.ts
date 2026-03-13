@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../index';
-import { generatePresignedUrl } from '../services/s3Service';
+import { generatePresignedUrl, deleteObjects } from '../services/s3Service';
 
 export const getFeed = async (req: Request, res: Response) => {
     try {
@@ -95,17 +95,18 @@ export const deletePost = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Post not found' });
         }
 
+        console.log(`[DELETE] Deleting post ${id} from database...`);
         await prisma.post.delete({ where: { id } });
 
         // Clean up media in S3 (non-blocking/best effort)
         if (post.mediaUrls && post.mediaUrls.length > 0) {
-            const { deleteObjects } = require('../services/s3Service');
+            console.log(`[DELETE] Cleaning up ${post.mediaUrls.length} media files from S3...`);
             deleteObjects(post.mediaUrls).catch((err: any) => console.error("S3 Cleanup Error:", err));
         }
 
         res.json({ message: 'Post deleted successfully' });
     } catch (error) {
-        console.error(error);
+        console.error(`[DELETE ERROR] Failed to delete post ${req.params.id}:`, error);
         res.status(500).json({ error: 'Server error deleting post' });
     }
 };

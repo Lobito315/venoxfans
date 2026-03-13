@@ -9,6 +9,15 @@ const s3Client = new S3Client({
     },
 });
 
+export const getCDNUrl = (key: string) => {
+    const cdnUrl = process.env.CDN_URL;
+    if (cdnUrl) {
+        return `${cdnUrl.replace(/\/$/, '')}/${key}`;
+    }
+    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
+    return `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
+};
+
 export const generatePresignedUrl = async (fileName: string, contentType: string) => {
     const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
     const key = `uploads/${Date.now()}-${fileName}`;
@@ -22,12 +31,24 @@ export const generatePresignedUrl = async (fileName: string, contentType: string
     // URL expires in 15 minutes
     const url = await getSignedUrl(s3Client, command, { expiresIn: 900 });
     
-    const cdnUrl = process.env.CDN_URL; // e.g. https://media.venoxfans.com
-    const fileUrl = cdnUrl 
-        ? `${cdnUrl.replace(/\/$/, '')}/${key}` 
-        : `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
+    const fileUrl = getCDNUrl(key);
 
     return { uploadUrl: url, fileUrl };
+};
+
+export const uploadBase64Buffer = async (buffer: Buffer, fileName: string, contentType: string) => {
+    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
+    const key = `migrated/${Date.now()}-${fileName}`;
+
+    const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+    });
+
+    await s3Client.send(command);
+    return getCDNUrl(key);
 };
 
 export const deleteObjects = async (urls: string[]) => {
