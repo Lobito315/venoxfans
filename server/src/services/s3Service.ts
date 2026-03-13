@@ -22,21 +22,33 @@ export const generatePresignedUrl = async (fileName: string, contentType: string
     // URL expires in 15 minutes
     const url = await getSignedUrl(s3Client, command, { expiresIn: 900 });
     
-    return {
-        uploadUrl: url,
-        fileUrl: `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`
-    };
+    const cdnUrl = process.env.CDN_URL; // e.g. https://media.venoxfans.com
+    const fileUrl = cdnUrl 
+        ? `${cdnUrl.replace(/\/$/, '')}/${key}` 
+        : `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
+
+    return { uploadUrl: url, fileUrl };
 };
 
 export const deleteObjects = async (urls: string[]) => {
     const { DeleteObjectsCommand } = await import("@aws-sdk/client-s3");
     const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
     
-    // Extract keys from URLs
-    // Example URL: https://venox-st.s3.us-east-2.amazonaws.com/uploads/123456789-file.jpg
+    // Extract keys from URLs robustly
     const keys = urls.map(url => {
-        const parts = url.split('.amazonaws.com/');
-        return parts.length > 1 ? parts[1] : null;
+        try {
+            const urlObj = new URL(url);
+            // If it's an S3 URL like bucket.s3.region.amazonaws.com/key
+            if (urlObj.hostname.includes('.amazonaws.com')) {
+                const parts = url.split('.amazonaws.com/');
+                return parts.length > 1 ? parts[1] : null;
+            }
+            // If it's a CDN URL like media.domain.com/key
+            // Pathname starts with / so we remove it
+            return urlObj.pathname.substring(1);
+        } catch (e) {
+            return null;
+        }
     }).filter(key => key !== null) as string[];
 
     if (keys.length === 0) return;
