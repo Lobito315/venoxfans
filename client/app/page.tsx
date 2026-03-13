@@ -107,6 +107,68 @@ export default function LandingPage() {
 
             </div>
           </section>
+          {/* ── How It Works Section ── */}
+          <section className="bg-white dark:bg-[#1f1022] py-24" id="how-it-works">
+            <div className="max-w-7xl mx-auto px-6 md:px-20">
+              <div className="text-center mb-16">
+                <h2 className="text-[#d948ef] font-bold tracking-widest uppercase text-sm mb-4">Start your journey</h2>
+                <h3 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-extrabold tracking-tight">How it works</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+                {/* Connecting lines (desktop only) */}
+                <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#d948ef]/20 to-transparent -translate-y-full px-20"></div>
+                
+                {[
+                  { step: '01', title: 'Create Profile', desc: 'Sign up in seconds and customize your creator page with your unique style.', icon: 'person_add' },
+                  { step: '02', title: 'Upload Content', desc: 'Share photos, 4K videos, or start a live stream for your dedicated fans.', icon: 'cloud_upload' },
+                  { step: '03', title: 'Earn & Grow', desc: 'Monetize through subscriptions, PPV, and tips with the lowest fees.', icon: 'payments' },
+                ].map((item) => (
+                  <div key={item.step} className="relative flex flex-col items-center text-center gap-6 z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-[#d948ef] text-white flex items-center justify-center shadow-xl shadow-[#d948ef]/30 font-black text-xl">
+                      <span className="material-symbols-outlined text-3xl">{item.icon}</span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">{item.title}</h4>
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Creators Section ── */}
+          <section className="max-w-7xl mx-auto px-6 md:px-20 py-16" id="creators">
+            <div className="flex flex-col gap-10">
+              <div className="text-center max-w-3xl mx-auto">
+                <h2 className="text-[#d948ef] font-bold tracking-widest uppercase text-sm mb-4">Meet Our Creators</h2>
+                <h3 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-extrabold tracking-tight">
+                  Diverse talent, <span className="text-[#d948ef]">limitless</span> creativity
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-lg mt-6 font-medium">
+                  From fitness experts to digital artists, find the community that speaks to you. Support them directly and unlock exclusive experiences.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                {[
+                  { name: 'Fitness', icon: 'fitness_center' },
+                  { name: 'Lifestyle', icon: 'auto_awesome' },
+                  { name: 'Gaming', icon: 'sports_esports' },
+                  { name: 'Art', icon: 'palette' },
+                  { name: 'Music', icon: 'music_note' },
+                  { name: 'Cooking', icon: 'restaurant' },
+                ].map((cat) => (
+                  <div key={cat.name} className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-slate-200 dark:border-[#d948ef]/10 bg-white dark:bg-[#1f1022] hover:scale-105 transition-all cursor-pointer group">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-[#d948ef]/10 text-[#d948ef] group-hover:bg-[#d948ef] group-hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
+                    </div>
+                    <span className="font-bold text-sm">{cat.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
           {/* ── Features Section ── */}
           <section className="bg-slate-100 dark:bg-[#d948ef]/5 py-24" id="features">
@@ -152,6 +214,91 @@ export default function LandingPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Pricing Section ── */}
+          <section className="max-w-7xl mx-auto px-6 md:px-20 py-24" id="pricing">
+            <div className="flex flex-col items-center gap-12">
+              <div className="text-center max-w-3xl">
+                <h2 className="text-[#d948ef] font-bold tracking-widest uppercase text-sm mb-4">Pricing & Model</h2>
+                <h3 className="text-slate-900 dark:text-white text-4xl md:text-6xl font-black tracking-tight">
+                  The most <span className="text-[#d948ef]">fair</span> model for creators
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-lg mt-6 font-medium">
+                  We believe in your success. That&apos;s why we only win when you do. No setup fees, no monthly subscriptions.
+                </p>
+              </div>
+
+              <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* For Creators */}
+                <div className="relative group overflow-hidden rounded-3xl border-2 border-[#d948ef] bg-white dark:bg-[#1f1022] p-10 shadow-2xl shadow-[#d948ef]/10">
+                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-8xl">trending_up</span>
+                  </div>
+                  <div className="flex flex-col gap-6 h-full">
+                    <div>
+                      <span className="bg-[#d948ef] text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest">For Creators</span>
+                      <h4 className="text-3xl font-black mt-4">Free to Start</h4>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-6xl font-black text-[#d948ef]">5%</span>
+                      <span className="text-slate-500 font-bold italic">Flat commission</span>
+                    </div>
+                    <ul className="space-y-4 flex-grow">
+                      {[
+                        'Professional creator tools',
+                        'HD/4K video streaming',
+                        'Direct fan messaging',
+                        'Instant payout availability',
+                        'Advanced analytics & tracking'
+                      ].map(item => (
+                        <li key={item} className="flex items-center gap-3 text-sm font-medium">
+                          <span className="material-symbols-outlined text-[#d948ef] text-lg">check_circle</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/signup" className="flex items-center justify-center h-14 rounded-xl bg-[#d948ef] text-white font-black hover:scale-[1.02] transition-all shadow-lg shadow-[#d948ef]/20">
+                      Become a Creator
+                    </Link>
+                  </div>
+                </div>
+
+                {/* For Fans */}
+                <div className="relative group overflow-hidden rounded-3xl border border-slate-200 dark:border-[#d948ef]/20 bg-slate-50 dark:bg-[#d948ef]/5 p-10">
+                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-8xl">favorite</span>
+                  </div>
+                  <div className="flex flex-col gap-6 h-full">
+                    <div>
+                      <span className="bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest">For Fans</span>
+                      <h4 className="text-3xl font-black mt-4">Support Directly</h4>
+                    </div>
+                    <div className="flex items-baseline gap-2 text-slate-400">
+                      <span className="text-4xl font-black text-slate-900 dark:text-white">Variable</span>
+                      <span className="font-bold">prices</span>
+                    </div>
+                    <ul className="space-y-4 flex-grow">
+                      {[
+                        'Choose your subscription price',
+                        'Unlock exclusive PPV posts',
+                        'Tip your favorite creators',
+                        'Secure & anonymous billing',
+                        'Interact in private chats'
+                      ].map(item => (
+                        <li key={item} className="flex items-center gap-3 text-sm font-medium">
+                          <span className="material-symbols-outlined text-slate-400 text-lg">radio_button_checked</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/explore" className="flex items-center justify-center h-14 rounded-xl border-2 border-slate-300 dark:border-[#d948ef]/20 text-slate-900 dark:text-white font-black hover:bg-white dark:hover:bg-white/5 transition-all">
+                      Explore Creators
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -211,7 +358,7 @@ export default function LandingPage() {
                 <ul className="flex flex-col gap-4 text-sm text-slate-500 dark:text-slate-400">
                   {[
                     ['Explore Creators', '/explore'],
-                    ['How it works', '#'],
+                    ['How it works', '#how-it-works'],
                     ['Pricing & Commissions', '#pricing'],
                     ['Referral Program', '#'],
                   ].map(([label, href]) => (

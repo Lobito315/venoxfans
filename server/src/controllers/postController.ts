@@ -84,7 +84,25 @@ export const createPost = async (req: Request, res: Response) => {
 export const deletePost = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        
+        // Find post first to get media URLs
+        const post = await prisma.post.findUnique({
+            where: { id },
+            select: { mediaUrls: true }
+        });
+
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
         await prisma.post.delete({ where: { id } });
+
+        // Clean up media in S3 (non-blocking/best effort)
+        if (post.mediaUrls && post.mediaUrls.length > 0) {
+            const { deleteObjects } = require('../services/s3Service');
+            deleteObjects(post.mediaUrls).catch((err: any) => console.error("S3 Cleanup Error:", err));
+        }
+
         res.json({ message: 'Post deleted successfully' });
     } catch (error) {
         console.error(error);
