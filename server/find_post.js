@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function run() {
   const p = await prisma.post.findUnique({
-    where: { id: '7b1bfe66-f9a6-4c86-a0be-e259564f5761' },
+    where: { id: 'cfd094f8-17fc-4efc-aeae-9b5f581f70b0' },
     include: { creator: true }
   });
 
@@ -21,13 +21,9 @@ async function run() {
       }, null, 2));
     }
   } else {
-    console.log("Post found:", JSON.stringify({
-        id: p.id,
-        creator: {
-          username: p.creator.username,
-          email: p.creator.email
-        }
-    }, null, 2));
+    console.log("Post found:", JSON.stringify(p, null, 2));
+    console.log("Type of mediaUrls:", typeof p.mediaUrls);
+    console.log("Is array?", Array.isArray(p.mediaUrls));
   }
 }
 

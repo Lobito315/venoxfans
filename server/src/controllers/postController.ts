@@ -95,13 +95,19 @@ export const deletePost = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Post not found' });
         }
 
+        console.log(`[DELETE] Removing related records for post ${id}...`);
+        // Manually delete related records to handle DBs where cascade isn't enforced
+        await prisma.like.deleteMany({ where: { postId: id } });
+        await prisma.comment.deleteMany({ where: { postId: id } });
+        await prisma.purchase.deleteMany({ where: { postId: id } });
+
         console.log(`[DELETE] Deleting post ${id} from database...`);
         await prisma.post.delete({ where: { id } });
 
-        // Clean up media in S3 (non-blocking/best effort)
+        // Clean up media in Cloudflare / S3 (non-blocking/best effort)
         if (post.mediaUrls && post.mediaUrls.length > 0) {
-            console.log(`[DELETE] Cleaning up ${post.mediaUrls.length} media files from S3...`);
-            deleteObjects(post.mediaUrls).catch((err: any) => console.error("S3 Cleanup Error:", err));
+            console.log(`[DELETE] Cleaning up ${post.mediaUrls.length} media files...`);
+            deleteObjects(post.mediaUrls).catch((err: any) => console.error("S3/CF Cleanup Error:", err));
         }
 
         res.json({ message: 'Post deleted successfully' });

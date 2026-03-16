@@ -20,7 +20,7 @@ async function run() {
     
     stats.forEach(s => {
       console.log(`Post ID: ${s.id} | Creator: ${s.username} (${s.email})`);
-      console.log(`Prefix: ${s.prefix}`);
+      console.log(`mediaUrls: ${s.prefix}`); // This will now show the full content since it's limited in query
       console.log(`Size: ${s.size} bytes`);
       console.log('---');
     });
