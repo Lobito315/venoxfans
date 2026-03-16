@@ -13,11 +13,17 @@ async function testRemoteDelete() {
         }
 
         const postUnderTest = posts[0];
-        console.log(`Attempting to delete post ${postUnderTest.id} via API...`);
+        console.log(`Attempting to delete post ${postUnderTest.id} (Owner: ${postUnderTest.creatorId}) via API...`);
         
-        const deleteRes = await fetch(`${API_URL}/api/posts/${postUnderTest.id}`, { method: 'DELETE' });
+        const deleteRes = await fetch(`${API_URL}/api/posts/${postUnderTest.id}`, { 
+            method: 'DELETE',
+            headers: {
+                'X-User-Id': postUnderTest.creatorId // Mocking authorized ownwer
+            }
+        });
         const text = await deleteRes.text();
-        console.log("Delete Response:", deleteRes.status, text);
+        console.log("Delete Response Status:", deleteRes.status);
+        console.log("Delete Response Body:", text);
     } catch (err) {
         console.error("Error:", err.message);
     }

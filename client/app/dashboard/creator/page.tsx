@@ -90,32 +90,46 @@ export default function CreatorDashboard() {
     };
 
     const handlePublish = async () => {
-        if (!userId) return alert('You must be logged in');
+        if (!userId) return alert('You must be logged in to publish');
         if (!content.trim() && mediaFiles.length === 0) return alert('Please add text or media for your post');
 
         setIsPublishing(true);
         try {
             const mediaUrls = await Promise.all(mediaFiles.map(async (m) => {
                 // 1. Get presigned URL
+                console.log(`[Publish] Getting upload URL for ${m.file.name}...`);
                 const res = await fetch(`${getApiUrl()}/api/posts/upload-url?fileName=${encodeURIComponent(m.file.name)}&contentType=${encodeURIComponent(m.file.type || 'application/octet-stream')}`);
-                if (!res.ok) throw new Error('Failed to get upload permission');
+                
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(`Permission failed: ${errorData.error || res.statusText}`);
+                }
                 const { uploadUrl, fileUrl } = await res.json();
 
                 // 2. Upload directly to S3
+                console.log(`[Publish] Uploading ${m.file.name} directly to storage...`);
                 const uploadRes = await fetch(uploadUrl, {
                     method: 'PUT',
                     headers: { 'Content-Type': m.file.type || 'application/octet-stream' },
                     body: m.file
                 });
 
-                if (!uploadRes.ok) throw new Error(`Failed to upload ${m.file.name}`);
+                if (!uploadRes.ok) {
+                    // This is usually a CORS or AWS permission issue
+                    throw new Error(`Storage upload failed for ${m.file.name}. Please check storage configuration.`);
+                }
                 
                 return fileUrl;
             }));
 
+            // 3. Create the post record in the database
+            console.log(`[Publish] Saving post record to database...`);
             const res = await fetch(`${getApiUrl()}/api/posts`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Id': userId // Temporary auth mechanism matching controller
+                },
                 body: JSON.stringify({
                     creatorId: userId,
                     content,
@@ -126,18 +140,21 @@ export default function CreatorDashboard() {
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to publish');
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'The server rejected the post. Please try again.');
             }
 
-            alert('Post published successfully to the cloud! 🚀');
+            alert('Post published successfully! 🚀');
             setContent('');
             setMediaFiles([]);
             setIsPremium(false);
             setPrice('0.00');
+            
+            // Refresh dashboard or redirect if needed
+            router.refresh();
         } catch (error: any) {
-            console.error(error);
-            alert(error.message);
+            console.error('[Publish Error]', error);
+            alert(`Error: ${error.message}`);
         } finally {
             setIsPublishing(false);
         }

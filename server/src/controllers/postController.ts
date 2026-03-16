@@ -35,7 +35,7 @@ export const getFeed = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error(error);
+        console.error('[getFeed] Error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -55,64 +55,94 @@ export const getCreatorPosts = async (req: Request, res: Response) => {
 
         res.json(posts);
     } catch (error) {
-        console.error(error);
+        console.error('[getCreatorPosts] Error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 export const createPost = async (req: Request, res: Response) => {
     try {
-        const { creatorId, content, mediaUrls, isPremium, price } = req.body; // In real app, creatorId comes from auth token
+        const { creatorId, content, mediaUrls, isPremium, price } = req.body;
+
+        if (!creatorId) {
+            return res.status(400).json({ error: 'creatorId is required' });
+        }
+        if (!content?.trim() && (!mediaUrls || mediaUrls.length === 0)) {
+            return res.status(400).json({ error: 'Post must have text content or at least one media file' });
+        }
+
+        // Verify the creator actually exists to prevent FK violation
+        const creatorExists = await prisma.user.findUnique({
+            where: { id: creatorId },
+            select: { id: true, isCreator: true }
+        });
+
+        if (!creatorExists) {
+            return res.status(404).json({ error: 'Creator not found. Please log in again.' });
+        }
 
         const post = await prisma.post.create({
             data: {
                 creatorId,
-                content,
+                content: content?.trim() || null,
                 mediaUrls: mediaUrls || [],
                 isPremium: isPremium || false,
-                price: price || null
+                price: isPremium && price ? parseFloat(price) : null
             }
         });
 
+        console.log(`[createPost] Post ${post.id} created by creator ${creatorId} with ${(mediaUrls || []).length} media file(s)`);
         res.status(201).json(post);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error' });
+    } catch (error: any) {
+        console.error('[createPost] Error:', error?.message || error);
+        res.status(500).json({ error: 'Server error creating post' });
     }
 };
 
 export const deletePost = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        
-        // Find post first to get media URLs
+        // The requesting user's ID — sent as a header or query param by the client
+        const requesterId = (req.headers['x-user-id'] as string) || (req.query.userId as string);
+
+        // Fetch the post so we can check ownership and get media URLs
         const post = await prisma.post.findUnique({
             where: { id },
-            select: { mediaUrls: true }
+            select: { mediaUrls: true, creatorId: true }
         });
 
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        console.log(`[DELETE] Removing related records for post ${id}...`);
-        // Manually delete related records to handle DBs where cascade isn't enforced
+        // --- Ownership check ---
+        // If a requesterId is provided, verify they own the post.
+        // (Full JWT auth middleware can replace this in the future)
+        if (requesterId && post.creatorId !== requesterId) {
+            console.warn(`[deletePost] Unauthorized: user ${requesterId} tried to delete post ${id} owned by ${post.creatorId}`);
+            return res.status(403).json({ error: 'You are not authorized to delete this post' });
+        }
+
+        console.log(`[deletePost] Removing related records for post ${id}...`);
+        // Manually cascade-delete related records
         await prisma.like.deleteMany({ where: { postId: id } });
         await prisma.comment.deleteMany({ where: { postId: id } });
         await prisma.purchase.deleteMany({ where: { postId: id } });
 
-        console.log(`[DELETE] Deleting post ${id} from database...`);
+        console.log(`[deletePost] Deleting post ${id} from database...`);
         await prisma.post.delete({ where: { id } });
 
-        // Clean up media in Cloudflare / S3 (non-blocking/best effort)
+        // Clean up media files from S3/Cloudflare (non-blocking, best-effort)
         if (post.mediaUrls && post.mediaUrls.length > 0) {
-            console.log(`[DELETE] Cleaning up ${post.mediaUrls.length} media files...`);
-            deleteObjects(post.mediaUrls).catch((err: any) => console.error("S3/CF Cleanup Error:", err));
+            console.log(`[deletePost] Scheduling S3 cleanup for ${post.mediaUrls.length} file(s)...`);
+            deleteObjects(post.mediaUrls).catch((err: any) =>
+                console.error(`[deletePost] S3/CF cleanup failed for post ${id}:`, err?.message || err)
+            );
         }
 
         res.json({ message: 'Post deleted successfully' });
-    } catch (error) {
-        console.error(`[DELETE ERROR] Failed to delete post ${req.params.id}:`, error);
+    } catch (error: any) {
+        console.error(`[deletePost] Failed to delete post ${req.params.id}:`, error?.message || error);
         res.status(500).json({ error: 'Server error deleting post' });
     }
 };
@@ -120,7 +150,11 @@ export const deletePost = async (req: Request, res: Response) => {
 export const toggleLike = async (req: Request, res: Response) => {
     try {
         const { id: postId } = req.params;
-        const { userId } = req.body; // In real app, from auth middleware
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'userId is required' });
+        }
 
         const existingLike = await prisma.like.findFirst({
             where: { postId, userId }
@@ -137,7 +171,7 @@ export const toggleLike = async (req: Request, res: Response) => {
         const count = await prisma.like.count({ where: { postId } });
         return res.json({ count });
     } catch (error) {
-        console.error(error);
+        console.error('[toggleLike] Error:', error);
         res.status(500).json({ error: 'Server error toggling like' });
     }
 };
@@ -147,8 +181,12 @@ export const addComment = async (req: Request, res: Response) => {
         const { id: postId } = req.params;
         const { userId, content } = req.body;
 
+        if (!userId || !content?.trim()) {
+            return res.status(400).json({ error: 'userId and content are required' });
+        }
+
         const comment = await prisma.comment.create({
-            data: { postId, userId, content },
+            data: { postId, userId, content: content.trim() },
             include: {
                 user: { select: { username: true, avatarUrl: true } }
             }
@@ -156,7 +194,7 @@ export const addComment = async (req: Request, res: Response) => {
 
         res.status(201).json(comment);
     } catch (error) {
-        console.error(error);
+        console.error('[addComment] Error:', error);
         res.status(500).json({ error: 'Server error adding comment' });
     }
 };
@@ -174,7 +212,7 @@ export const getPostComments = async (req: Request, res: Response) => {
 
         res.json(comments);
     } catch (error) {
-        console.error(error);
+        console.error('[getPostComments] Error:', error);
         res.status(500).json({ error: 'Server error getting comments' });
     }
 };
@@ -185,10 +223,11 @@ export const getUploadUrl = async (req: Request, res: Response) => {
         if (!fileName || !contentType) {
             return res.status(400).json({ error: 'Missing fileName or contentType' });
         }
+
         const data = await generatePresignedUrl(fileName as string, contentType as string);
         res.json(data);
-    } catch (error) {
-        console.error(error);
+    } catch (error: any) {
+        console.error('[getUploadUrl] Error generating presigned URL:', error?.message || error);
         res.status(500).json({ error: 'Server error generating upload URL' });
     }
 };

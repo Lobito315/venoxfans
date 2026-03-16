@@ -43,19 +43,37 @@ export default function CreatorPosts() {
     };
 
     const handleDelete = async (postId: string) => {
+        if (!userId) return alert('Session expired. Please log in again.');
         if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
+        
+        const originalPosts = [...posts];
         setDeleting(postId);
+
         try {
-            const res = await fetch(`${getApiUrl()}/api/posts/${postId}`, { method: 'DELETE' });
-            if (res.ok) {
-                setPosts(prev => prev.filter(p => p.id !== postId));
-            } else {
-                alert('Failed to delete post. Please try again.');
+            // Optimistic update: remove from list immediately
+            setPosts(prev => prev.filter(p => p.id !== postId));
+
+            const res = await fetch(`${getApiUrl()}/api/posts/${postId}`, { 
+                method: 'DELETE',
+                headers: {
+                    'X-User-Id': userId // Inform backend who is requesting the delete
+                }
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Server error deleting post');
             }
-        } catch (e) {
-            alert('Error deleting post.');
+            
+            console.log(`[Delete] Post ${postId} successfully deleted.`);
+        } catch (e: any) {
+            console.error('[Delete Error]', e);
+            alert(`Failed to delete: ${e.message}`);
+            // Rollback on error
+            setPosts(originalPosts);
+        } finally {
+            setDeleting(null);
         }
-        setDeleting(null);
     };
 
     const formatDate = (dateStr: string) =>

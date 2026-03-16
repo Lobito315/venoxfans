@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
@@ -9,80 +9,120 @@ const s3Client = new S3Client({
     },
 });
 
-export const getCDNUrl = (key: string) => {
-    const cdnUrl = process.env.CDN_URL;
-    if (cdnUrl) {
-        return `${cdnUrl.replace(/\/$/, '')}/${key}`;
+const BUCKET = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
+const REGION = process.env.AWS_REGION || 'us-east-2';
+const CDN_URL = process.env.CDN_URL || '';
+
+/**
+ * Returns the public CDN or S3 URL for a given object key.
+ */
+export const getCDNUrl = (key: string): string => {
+    if (CDN_URL) {
+        return `${CDN_URL.replace(/\/$/, '')}/${key}`;
     }
-    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
-    return `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
+    return `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
 };
 
+/**
+ * Generates a presigned PUT URL for direct browser→S3 upload.
+ * Returns { uploadUrl, fileUrl } where fileUrl is the public CDN/S3 URL.
+ */
 export const generatePresignedUrl = async (fileName: string, contentType: string) => {
-    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
-    const key = `uploads/${Date.now()}-${fileName}`;
-    
+    const key = `uploads/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
     const command = new PutObjectCommand({
-        Bucket: bucketName,
+        Bucket: BUCKET,
         Key: key,
         ContentType: contentType,
     });
 
     // URL expires in 15 minutes
-    const url = await getSignedUrl(s3Client, command, { expiresIn: 900 });
-    
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
     const fileUrl = getCDNUrl(key);
 
-    return { uploadUrl: url, fileUrl };
+    console.log(`[S3] Presigned URL generated for key: ${key}`);
+    return { uploadUrl, fileUrl, key };
 };
 
-export const uploadBase64Buffer = async (buffer: Buffer, fileName: string, contentType: string) => {
-    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
+/**
+ * Uploads a buffer directly to S3 (used for server-side migrations).
+ */
+export const uploadBase64Buffer = async (buffer: Buffer, fileName: string, contentType: string): Promise<string> => {
     const key = `migrated/${Date.now()}-${fileName}`;
 
     const command = new PutObjectCommand({
-        Bucket: bucketName,
+        Bucket: BUCKET,
         Key: key,
         Body: buffer,
         ContentType: contentType,
     });
 
     await s3Client.send(command);
+    console.log(`[S3] Buffer uploaded for key: ${key}`);
     return getCDNUrl(key);
 };
 
-export const deleteObjects = async (urls: string[]) => {
-    const { DeleteObjectsCommand } = await import("@aws-sdk/client-s3");
-    const bucketName = process.env.AWS_S3_BUCKET_NAME || 'venox-st';
-    
-    // Extract keys from URLs robustly
-    const keys = urls.map(url => {
-        try {
-            const urlObj = new URL(url);
-            // If it's an S3 URL like bucket.s3.region.amazonaws.com/key
-            if (urlObj.hostname.includes('.amazonaws.com')) {
-                const parts = url.split('.amazonaws.com/');
-                return parts.length > 1 ? parts[1] : null;
-            }
-            // If it's a CDN URL like media.domain.com/key
-            // Pathname starts with / so we remove it
-            return urlObj.pathname.substring(1);
-        } catch (e) {
-            return null;
-        }
-    }).filter(key => key !== null) as string[];
+/**
+ * Extracts the S3 object key from a URL (CDN or direct S3 URL).
+ * CDN URL format: https://venox-media.valormasivo.workers.dev/uploads/timestamp-file.ext
+ * S3 URL format:  https://venox-st.s3.us-east-2.amazonaws.com/uploads/timestamp-file.ext
+ */
+const extractKeyFromUrl = (url: string): string | null => {
+    try {
+        const urlObj = new URL(url);
 
-    if (keys.length === 0) return;
+        // Direct S3 URL: extract everything after the .amazonaws.com/
+        if (urlObj.hostname.includes('.amazonaws.com')) {
+            const parts = url.split('.amazonaws.com/');
+            const key = parts.length > 1 ? parts[1] : null;
+            return key || null;
+        }
+
+        // CDN URL (Cloudflare Worker): pathname is /uploads/... → strip leading /
+        const key = urlObj.pathname.substring(1); // e.g. "uploads/123-file.mp4"
+        return key || null;
+    } catch (e) {
+        console.error(`[S3] Could not parse URL: ${url}`, e);
+        return null;
+    }
+};
+
+/**
+ * Deletes one or more media files from S3 given their public URLs.
+ * Logs the exact keys being deleted and surfaces any errors.
+ */
+export const deleteObjects = async (urls: string[]): Promise<void> => {
+    const keys = urls.map(extractKeyFromUrl).filter((k): k is string => k !== null && k.length > 0);
+
+    if (keys.length === 0) {
+        console.warn('[S3] deleteObjects called but no valid keys could be extracted from URLs:', urls);
+        return;
+    }
+
+    console.log(`[S3] Deleting ${keys.length} object(s) from bucket "${BUCKET}":`, keys);
 
     try {
         const command = new DeleteObjectsCommand({
-            Bucket: bucketName,
+            Bucket: BUCKET,
             Delete: {
-                Objects: keys.map(Key => ({ Key }))
-            }
+                Objects: keys.map(Key => ({ Key })),
+                Quiet: false, // surface per-object errors in the response
+            },
         });
-        await s3Client.send(command);
-    } catch (error) {
-        console.error("Error deleting objects from S3:", error);
+
+        const result = await s3Client.send(command);
+
+        if (result.Deleted && result.Deleted.length > 0) {
+            console.log(`[S3] Successfully deleted ${result.Deleted.length} object(s):`,
+                result.Deleted.map(d => d.Key));
+        }
+
+        if (result.Errors && result.Errors.length > 0) {
+            console.error('[S3] Some objects could not be deleted:', result.Errors);
+        }
+    } catch (error: any) {
+        // Re-throw so the caller (deletePost) can log it properly
+        console.error('[S3] DeleteObjects command failed:', error.message || error);
+        throw error;
     }
 };
