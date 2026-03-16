@@ -108,15 +108,17 @@ export default function CreatorDashboard() {
 
                 // 2. Upload directly to S3
                 console.log(`[Publish] Uploading ${m.file.name} directly to storage...`);
+                const contentType = m.file.type || 'application/octet-stream';
                 const uploadRes = await fetch(uploadUrl, {
                     method: 'PUT',
-                    headers: { 'Content-Type': m.file.type || 'application/octet-stream' },
+                    headers: { 'Content-Type': contentType },
                     body: m.file
                 });
 
                 if (!uploadRes.ok) {
-                    // This is usually a CORS or AWS permission issue
-                    throw new Error(`Storage upload failed for ${m.file.name}. Please check storage configuration.`);
+                    const s3Error = await uploadRes.text().catch(() => 'No error body');
+                    console.error('[S3 Error Body]', s3Error);
+                    throw new Error(`Storage upload failed for ${m.file.name}. S3 said: ${s3Error.includes('<Message>') ? s3Error.split('<Message>')[1].split('</Message>')[0] : 'Check CORS/IAM'}`);
                 }
                 
                 return fileUrl;

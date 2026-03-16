@@ -41,6 +41,7 @@ export const generatePresignedUrl = async (fileName: string, contentType: string
     const fileUrl = getCDNUrl(key);
 
     console.log(`[S3] Presigned URL generated for key: ${key}`);
+    console.log(`[S3] ContentType signed: ${contentType}`);
     return { uploadUrl, fileUrl, key };
 };
 
