@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getApiUrl } from '../../../utils/apiConfig';
 
 interface UserData {
@@ -13,6 +14,7 @@ interface UserData {
 }
 
 export default function UserSettings() {
+    const router = useRouter();
     const [user, setUser] = useState<UserData | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [bio, setBio] = useState('');
@@ -66,6 +68,32 @@ export default function UserSettings() {
             setSaveMsg('✅ Profile updated successfully!');
         } catch (err) {
             setSaveMsg('❌ Failed to save. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!user) return;
+        if (!confirm('Are you sure you want to delete your account? This action is permanent.')) return;
+        
+        setSaving(true);
+        try {
+            const res = await fetch(`${getApiUrl()}/api/users/profile`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: user.id }),
+            });
+
+            if (!res.ok) throw new Error('Failed to delete');
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            router.push('/');
+            router.refresh();
+            alert('Your account has been deleted.');
+        } catch (err) {
+            alert('Error deleting account.');
         } finally {
             setSaving(false);
         }
@@ -178,8 +206,12 @@ export default function UserSettings() {
 
                             <hr className="border-white/10 my-8" />
                             <h3 className="text-lg font-bold text-red-400 mb-4">Danger Zone</h3>
-                            <button className="px-6 py-2 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/10 transition">
-                                Delete Account
+                            <button 
+                                onClick={handleDeleteAccount}
+                                disabled={saving}
+                                className="px-6 py-2 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/10 transition disabled:opacity-50"
+                            >
+                                {saving ? 'Deleting...' : 'Delete Account'}
                             </button>
                         </div>
                     </div>

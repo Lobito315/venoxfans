@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getApiUrl } from '../../../utils/apiConfig';
 
 interface UserData {
@@ -14,6 +15,7 @@ interface UserData {
 }
 
 export default function CreatorSettings() {
+    const router = useRouter();
     const [user, setUser] = useState<UserData | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -78,6 +80,35 @@ export default function CreatorSettings() {
             setSaveMsg('✅ Profile updated successfully!');
         } catch (err) {
             setSaveMsg('❌ Failed to save. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!user) return;
+        if (!confirm('⚠️ WARNING: This action is permanent and cannot be undone. All your posts, subscriptions, and data will be deleted. Are you sure?')) return;
+        
+        const secondConfirm = confirm('Are you REALLY sure? This will also remove your media from our storage.');
+        if (!secondConfirm) return;
+
+        setSaving(true);
+        try {
+            const res = await fetch(`${getApiUrl()}/api/users/profile`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: user.id }),
+            });
+
+            if (!res.ok) throw new Error('Failed to delete account');
+            
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            router.push('/');
+            router.refresh();
+            alert('Your account has been deleted. We are sorry to see you go.');
+        } catch (err) {
+            alert('Error deleting account. Please try again later.');
         } finally {
             setSaving(false);
         }
@@ -217,6 +248,20 @@ export default function CreatorSettings() {
                             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition disabled:opacity-50"
                         >
                             {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+
+                    <hr className="border-white/10 my-10" />
+                    
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+                        <h3 className="text-xl font-bold text-red-400 mb-2">Danger Zone</h3>
+                        <p className="text-sm text-gray-500 mb-6">Permanently delete your account and all associated data. This action is irreversible.</p>
+                        <button 
+                            onClick={handleDeleteAccount}
+                            disabled={saving}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-6 py-2.5 rounded-xl font-bold transition disabled:opacity-50"
+                        >
+                            {saving ? 'Processing...' : 'Delete My Account'}
                         </button>
                     </div>
                 </section>
