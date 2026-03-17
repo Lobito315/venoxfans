@@ -53,6 +53,10 @@ app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date() });
 });
 
+app.get('/api/version', (_req, res) => {
+    res.json({ version: '2.1-delete-exhaustive', date: '2026-03-17' });
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log(`Allowed CORS origins: ${allowedOrigins.join(', ')}`);

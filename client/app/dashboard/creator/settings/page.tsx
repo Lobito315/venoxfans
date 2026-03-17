@@ -94,7 +94,9 @@ export default function CreatorSettings() {
 
         setSaving(true);
         try {
-            const res = await fetch(`${getApiUrl()}/api/users/profile`, {
+            // Hardcode backend for diagnostic to avoid NEXT_PUBLIC_API_URL issues
+            const apiBase = 'https://wppiduxhvv.us-east-2.awsapprunner.com';
+            const res = await fetch(`${apiBase}/api/users/profile`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: user.id }),
