@@ -11,10 +11,9 @@ frontend:
     build:
       commands:
         - npm run build --prefix client
-        - cp -r client/public client/.next/standalone/client/public || true
-        - cp -r client/.next/static client/.next/standalone/client/.next/static || true
+        - ls -R client/.next
   artifacts:
-    baseDirectory: client/.next/standalone
+    baseDirectory: client/.next
     files:
       - '**/*'
   cache:
