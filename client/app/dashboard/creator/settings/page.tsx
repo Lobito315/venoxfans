@@ -100,15 +100,18 @@ export default function CreatorSettings() {
                 body: JSON.stringify({ id: user.id }),
             });
 
-            if (!res.ok) throw new Error('Failed to delete account');
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to delete account');
+            }
             
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             router.push('/');
             router.refresh();
             alert('Your account has been deleted. We are sorry to see you go.');
-        } catch (err) {
-            alert('Error deleting account. Please try again later.');
+        } catch (err: any) {
+            alert(`Error deleting account: ${err.message || 'Please try again later.'}`);
         } finally {
             setSaving(false);
         }

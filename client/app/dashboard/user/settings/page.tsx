@@ -85,15 +85,18 @@ export default function UserSettings() {
                 body: JSON.stringify({ id: user.id }),
             });
 
-            if (!res.ok) throw new Error('Failed to delete');
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to delete');
+            }
 
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             router.push('/');
             router.refresh();
             alert('Your account has been deleted.');
-        } catch (err) {
-            alert('Error deleting account.');
+        } catch (err: any) {
+            alert(`Error deleting account: ${err.message || 'Unknown error'}`);
         } finally {
             setSaving(false);
         }
