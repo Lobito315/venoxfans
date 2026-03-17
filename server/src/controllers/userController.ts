@@ -98,10 +98,10 @@ export const updateProfile = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-        const { id: userId } = req.body;
+        const userId = req.body.id || req.body.userId || req.query.id || req.headers['x-user-id'] as string;
 
         if (!userId) {
-            console.error('[DeleteUser] Missing userId in request body');
+            console.error('[DeleteUser] No userId found in body, query, or headers');
             return res.status(400).json({ error: 'User ID is required' });
         }
 

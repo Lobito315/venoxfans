@@ -86,8 +86,15 @@ export default function UserSettings() {
             });
 
             if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || 'Failed to delete');
+                const text = await res.text();
+                let errMsg = 'Failed to delete';
+                try {
+                    const errData = JSON.parse(text);
+                    errMsg = errData.error || errData.message || errMsg;
+                } catch (e) {
+                    errMsg = `Server Error (${res.status}): ${text.substring(0, 100)}`;
+                }
+                throw new Error(errMsg);
             }
 
             localStorage.removeItem('token');
@@ -96,7 +103,7 @@ export default function UserSettings() {
             router.refresh();
             alert('Your account has been deleted.');
         } catch (err: any) {
-            alert(`Error deleting account: ${err.message || 'Unknown error'}`);
+            alert(`Error deleting account: ${err.message}`);
         } finally {
             setSaving(false);
         }

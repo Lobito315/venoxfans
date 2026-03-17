@@ -101,8 +101,15 @@ export default function CreatorSettings() {
             });
 
             if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || 'Failed to delete account');
+                const text = await res.text();
+                let errMsg = 'Failed to delete account';
+                try {
+                    const errData = JSON.parse(text);
+                    errMsg = errData.error || errData.message || errMsg;
+                } catch (e) {
+                    errMsg = `Server Error (${res.status}): ${text.substring(0, 100)}`;
+                }
+                throw new Error(errMsg);
             }
             
             localStorage.removeItem('token');
@@ -111,7 +118,7 @@ export default function CreatorSettings() {
             router.refresh();
             alert('Your account has been deleted. We are sorry to see you go.');
         } catch (err: any) {
-            alert(`Error deleting account: ${err.message || 'Please try again later.'}`);
+            alert(`Error deleting account: ${err.message}`);
         } finally {
             setSaving(false);
         }
