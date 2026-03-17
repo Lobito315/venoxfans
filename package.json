@@ -1,0 +1,10 @@
+{
+  "name": "venoxfans-monorepo",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "next": "15.1.6"
+  }
+}
