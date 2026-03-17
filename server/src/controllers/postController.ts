@@ -100,12 +100,12 @@ export const createPost = async (req: Request, res: Response) => {
 };
 
 export const deletePost = async (req: Request, res: Response) => {
+    const { id } = req.params;
     try {
-        const { id } = req.params;
         // The requesting user's ID — sent as a header or query param by the client
         const requesterId = (req.headers['x-user-id'] as string) || (req.query.userId as string);
 
-        // Fetch the post so we can check ownership and get media URLs
+        // 1. Fetch the post to check ownership and get media URLs for cleanup
         const post = await prisma.post.findUnique({
             where: { id },
             select: { mediaUrls: true, creatorId: true }
@@ -115,35 +115,38 @@ export const deletePost = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        // --- Ownership check ---
-        // If a requesterId is provided, verify they own the post.
-        // (Full JWT auth middleware can replace this in the future)
+        // 2. Ownership check
         if (requesterId && post.creatorId !== requesterId) {
             console.warn(`[deletePost] Unauthorized: user ${requesterId} tried to delete post ${id} owned by ${post.creatorId}`);
             return res.status(403).json({ error: 'You are not authorized to delete this post' });
         }
 
-        console.log(`[deletePost] Removing related records for post ${id}...`);
-        // Manually cascade-delete related records
-        await prisma.like.deleteMany({ where: { postId: id } });
-        await prisma.comment.deleteMany({ where: { postId: id } });
-        await prisma.purchase.deleteMany({ where: { postId: id } });
-
-        console.log(`[deletePost] Deleting post ${id} from database...`);
+        console.log(`[deletePost] Deleting post ${id} and its relations (cascading)...`);
+        
+        // 3. Delete the post record
+        // We rely on DATABASE-LEVEL CASCADE for Like, Comment, and Purchase records.
+        // This is more robust than manual deletes which can fail if the Prisma client is out of sync.
         await prisma.post.delete({ where: { id } });
 
-        // Clean up media files from S3/Cloudflare (non-blocking, best-effort)
-        if (post.mediaUrls && post.mediaUrls.length > 0) {
+        // 4. Clean up media files from S3/Cloudflare (non-blocking, best-effort)
+        if (post.mediaUrls && Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0) {
             console.log(`[deletePost] Scheduling S3 cleanup for ${post.mediaUrls.length} file(s)...`);
             deleteObjects(post.mediaUrls).catch((err: any) =>
                 console.error(`[deletePost] S3/CF cleanup failed for post ${id}:`, err?.message || err)
             );
         }
 
-        res.json({ message: 'Post deleted successfully' });
+        return res.json({ success: true, message: 'Post deleted successfully' });
     } catch (error: any) {
-        console.error(`[deletePost] Failed to delete post ${req.params.id}:`, error?.message || error);
-        res.status(500).json({ error: 'Server error deleting post' });
+        console.error(`[deletePost] ERROR failing to delete post ${id}:`, error);
+        
+        // Return a more descriptive error if it's a Prisma error or something else we can identify
+        const errorMessage = error?.message || 'Unknown server error';
+        return res.status(500).json({ 
+            error: 'Server error deleting post',
+            details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+            message: errorMessage
+        });
     }
 };
 
