@@ -7,6 +7,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id';
 
+if (typeof window !== 'undefined' && clientId === 'dummy-client-id') {
+  console.warn('Google Client ID is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.');
+}
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
