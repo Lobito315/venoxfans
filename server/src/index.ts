@@ -54,7 +54,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/version', (_req, res) => {
-    res.json({ version: '2.1-delete-exhaustive', date: '2026-03-17' });
+    res.json({ version: '2.2-google-fix', date: '2026-03-20' });
 });
 
 app.listen(port, () => {
