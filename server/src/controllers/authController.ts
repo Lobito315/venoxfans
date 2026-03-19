@@ -89,17 +89,34 @@ export const googleLogin = async (req: Request, res: Response) => {
     try {
         const { token } = req.body;
         
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id'
-        });
-        
-        const payload = ticket.getPayload();
-        if (!payload || !payload.email) {
-            return res.status(400).json({ error: 'Invalid Google token' });
+        let payload;
+        try {
+            // Try as ID Token first (standard JWT)
+            const ticket = await googleClient.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id'
+            });
+            payload = ticket.getPayload();
+        } catch (error) {
+            // If verification fails, it might be an access token (common with custom button implementations)
+            // Fetch user info directly from Google using the access token
+            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                payload = await response.json();
+            } else {
+                console.error('Google token verification failed (both ID and Access):', error);
+                return res.status(400).json({ error: 'Invalid Google token' });
+            }
         }
         
-        const { sub: googleId, email, name, picture } = payload;
+        if (!payload || !payload.email) {
+            return res.status(400).json({ error: 'Invalid Google token payload' });
+        }
+        
+        const { sub: googleId, email, name, picture } = (payload as any);
         
         // Find or create user
         let user = await prisma.user.findFirst({
