@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const { PAYPAL_CLIENT_ID, PAYPAL_SECRET } = process.env;
 const BASE_URL = 'https://api-m.sandbox.paypal.com'; // Use sandbox for now
 
 /**
@@ -9,8 +8,11 @@ const BASE_URL = 'https://api-m.sandbox.paypal.com'; // Use sandbox for now
  * @see https://developer.paypal.com/docs/api/reference/get-an-access-token/
  */
 export async function generateAccessToken() {
+    const { PAYPAL_CLIENT_ID, PAYPAL_SECRET } = process.env;
+
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
         console.error('[paypalService] Missing PAYPAL_CLIENT_ID or PAYPAL_SECRET in environment variables');
+        console.log('[paypalService] Available keys:', Object.keys(process.env).filter(k => k.includes('PAYPAL')));
         throw new Error('Missing PayPal credentials');
     }
 
