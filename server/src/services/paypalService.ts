@@ -10,6 +10,7 @@ const BASE_URL = 'https://api-m.sandbox.paypal.com'; // Use sandbox for now
  */
 export async function generateAccessToken() {
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
+        console.error('[paypalService] Missing PAYPAL_CLIENT_ID or PAYPAL_SECRET in environment variables');
         throw new Error('Missing PayPal credentials');
     }
 

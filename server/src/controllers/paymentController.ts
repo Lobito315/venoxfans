@@ -8,16 +8,19 @@ import { createPayPalOrder, capturePayPalOrder } from '../services/paypalService
 export const createOrder = async (req: Request, res: Response) => {
     try {
         const { type, targetId, amount } = req.body;
+        console.info(`[createOrder] Attempting to create order: type=${type}, targetId=${targetId}, amount=${amount}`);
 
         if (!type || !targetId || !amount) {
+            console.warn('[createOrder] Missing required fields');
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         const order = await createPayPalOrder(amount.toString());
+        console.info(`[createOrder] PayPal order created successfully: ${order.id}`);
         res.json(order);
     } catch (error: any) {
         console.error('[createOrder] Error:', error?.message || error);
-        res.status(500).json({ error: 'Failed to create PayPal order' });
+        res.status(500).json({ error: 'Failed to create PayPal order', details: error?.message });
     }
 };
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { isVideoUrl, getCleanMediaUrl } from '../utils/media_utils';
 import { getApiUrl } from '../utils/apiConfig';
+import PayPalCheckout from '@/components/PayPalCheckout';
 
 interface Post {
     id: string;
@@ -53,6 +54,10 @@ export default function FeedPage() {
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [commentLoading, setCommentLoading] = useState(false);
+    
+    // PayPal Checkout State
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [checkoutData, setCheckoutData] = useState<{ type: 'SUBSCRIPTION' | 'PURCHASE', targetId: string, amount: number } | null>(null);
 
     useEffect(() => {
         // Get user session
@@ -142,6 +147,19 @@ export default function FeedPage() {
                 setPosts(prev => prev.map(p => p.id === selectedPostId ? { ...p, _count: { ...p._count, comments: p._count.comments + 1 } } : p));
             })
             .catch(() => setCommentLoading(false));
+    const openCheckout = (type: 'SUBSCRIPTION' | 'PURCHASE', targetId: string, amount: number) => {
+        if (!currentUser) {
+            alert('Please login to continue');
+            return;
+        }
+        setCheckoutData({ type, targetId, amount });
+        setShowCheckout(true);
+    };
+
+    const handleCheckoutSuccess = () => {
+        setShowCheckout(false);
+        alert('Payment successful! Your access will be updated shortly.');
+        window.location.reload();
     };
 
     return (
@@ -220,7 +238,10 @@ export default function FeedPage() {
                                             <p className="text-gray-400 text-sm mb-6">
                                                 {post.price ? `Purchase for $${post.price.toFixed(2)}` : 'Exclusive for subscribers'}
                                             </p>
-                                            <button className="bg-[#d948ef] hover:brightness-110 text-white font-bold px-8 py-2.5 rounded-full transition-all shadow-lg shadow-[#d948ef]/30">
+                                            <button 
+                                                onClick={() => openCheckout('PURCHASE', post.id, post.price || 0)}
+                                                className="bg-[#d948ef] hover:brightness-110 text-white font-bold px-8 py-2.5 rounded-full transition-all shadow-lg shadow-[#d948ef]/30"
+                                            >
                                                 {post.price ? `Unlock $${post.price.toFixed(2)}` : 'Subscribe to View'}
                                             </button>
                                         </div>
@@ -244,9 +265,12 @@ export default function FeedPage() {
                                     <span className="group-hover:scale-125 transition-transform duration-200">💬</span>
                                     <span className="text-xs font-semibold">{post._count?.comments || 0}</span>
                                 </button>
-                                <button className="flex items-center gap-2 text-gray-400 hover:text-[#d948ef] transition-colors ml-auto group">
+                                <button 
+                                    onClick={() => openCheckout('PURCHASE', post.id, 5)} // Example $5 tip
+                                    className="flex items-center gap-2 text-gray-400 hover:text-[#d948ef] transition-colors ml-auto group"
+                                >
                                     <span className="group-hover:rotate-12 transition-transform duration-200">💸</span>
-                                    <span className="text-xs font-semibold uppercase tracking-tighter">Send Tip</span>
+                                    <span className="text-xs font-semibold uppercase tracking-tighter">Send Tip $5</span>
                                 </button>
                             </div>
                         </div>
@@ -435,6 +459,39 @@ export default function FeedPage() {
                     </div>
                 );
             })()}
+            {/* ── Checkout Modal ── */}
+            {showCheckout && checkoutData && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowCheckout(false)} />
+                    <div className="relative bg-[#1a0f1e] border border-white/10 rounded-3xl p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+                        <button onClick={() => setShowCheckout(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                            ✕
+                        </button>
+                        <h2 className="text-2xl font-bold mb-2">Complete Payment</h2>
+                        <p className="text-gray-400 mb-6">
+                            {checkoutData.type === 'SUBSCRIPTION' 
+                                ? `Subscribe for $${checkoutData.amount.toFixed(2)}/month.`
+                                : `Unlock this post for a one-time payment of $${checkoutData.amount.toFixed(2)}.`
+                            }
+                        </p>
+                        
+                        <div className="space-y-4">
+                            <PayPalCheckout 
+                                amount={checkoutData.amount}
+                                type={checkoutData.type}
+                                targetId={checkoutData.targetId}
+                                onSuccess={handleCheckoutSuccess}
+                                onError={(err) => alert('Payment error: ' + (err.message || 'Unknown error'))}
+                            />
+                            
+                            <p className="text-[10px] text-center text-gray-600 px-4">
+                                By completing the payment, you agree to our Terms of Service. Payments are processed securely via PayPal.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
+}
 }
