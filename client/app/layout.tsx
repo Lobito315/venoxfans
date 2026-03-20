@@ -4,6 +4,7 @@ import './globals.css';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id';
 
@@ -39,6 +40,8 @@ const footer = (
   </footer>
 );
 
+const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,9 +57,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <GoogleOAuthProvider clientId={clientId}>
-          <AppShell footer={footer}>
-            {children}
-          </AppShell>
+          <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID }}>
+            <AppShell footer={footer}>
+              {children}
+            </AppShell>
+          </PayPalScriptProvider>
         </GoogleOAuthProvider>
       </body>
     </html>

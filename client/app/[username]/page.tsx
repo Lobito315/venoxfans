@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { isVideoUrl, getCleanMediaUrl } from '../utils/media_utils';
 import { getApiUrl } from '../utils/apiConfig';
+import PayPalCheckout from '@/components/PayPalCheckout';
 
 interface Creator {
     id: string;
@@ -67,6 +68,8 @@ export default function CreatorProfilePage() {
     const [newComment, setNewComment] = useState('');
     const [commentLoading, setCommentLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [checkoutData, setCheckoutData] = useState<{ type: 'SUBSCRIPTION' | 'PURCHASE', targetId: string, amount: number } | null>(null);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -114,6 +117,21 @@ export default function CreatorProfilePage() {
                     return p;
                 }));
             });
+    };
+
+    const openCheckout = (type: 'SUBSCRIPTION' | 'PURCHASE', targetId: string, amount: number) => {
+        if (!currentUser) {
+            alert('Please login to continue');
+            return;
+        }
+        setCheckoutData({ type, targetId, amount });
+        setShowCheckout(true);
+    };
+
+    const handleCheckoutSuccess = () => {
+        setShowCheckout(false);
+        alert('Payment successful! Your access will be updated shortly.');
+        window.location.reload(); // Refresh to show new content
     };
 
     const handleComment = (e: React.FormEvent) => {
@@ -273,7 +291,10 @@ export default function CreatorProfilePage() {
 
                         {/* Subscribe */}
                         {creator.isCreator && (
-                            <button className="flex-1 md:flex-none md:px-8 h-12 rounded-full bg-[#d948ef] text-white font-bold text-sm hover:brightness-110 shadow-lg shadow-[#d948ef]/30 transition-all">
+                            <button 
+                                onClick={() => openCheckout('SUBSCRIPTION', creator.id, creator.subscriptionPrice || 9.99)}
+                                className="flex-1 md:flex-none md:px-8 h-12 rounded-full bg-[#d948ef] text-white font-bold text-sm hover:brightness-110 shadow-lg shadow-[#d948ef]/30 transition-all"
+                            >
                                 Subscribe ${creator.subscriptionPrice?.toFixed(2) || '9.99'}/mo
                             </button>
                         )}
@@ -353,7 +374,10 @@ export default function CreatorProfilePage() {
                                                 {post.price ? `Unlock for $${post.price}` : 'Subscribers Only'}
                                             </p>
                                             <p className="text-gray-400 text-xs mb-4 line-clamp-2">{post.content || 'Exclusive content'}</p>
-                                            <button className="w-full bg-[#d948ef] text-white text-xs font-bold py-2.5 rounded-full hover:brightness-110 transition-all shadow-lg shadow-[#d948ef]/25">
+                                            <button 
+                                                onClick={() => openCheckout('PURCHASE', post.id, post.price || 0)}
+                                                className="w-full bg-[#d948ef] text-white text-xs font-bold py-2.5 rounded-full hover:brightness-110 transition-all shadow-lg shadow-[#d948ef]/25"
+                                            >
                                                 {post.price ? `Unlock $${post.price}` : `Subscribe $${creator.subscriptionPrice?.toFixed(2) || '9.99'}`}
                                             </button>
                                         </div>
@@ -566,6 +590,38 @@ export default function CreatorProfilePage() {
                     </div>
                 );
             })()}
+            {/* ── Checkout Modal ── */}
+            {showCheckout && checkoutData && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowCheckout(false)} />
+                    <div className="relative bg-[#1a0f1e] border border-white/10 rounded-3xl p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+                        <button onClick={() => setShowCheckout(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                            ✕
+                        </button>
+                        <h2 className="text-2xl font-bold mb-2">Complete Payment</h2>
+                        <p className="text-gray-400 mb-6">
+                            {checkoutData.type === 'SUBSCRIPTION' 
+                                ? `Subscribe to @${creator.username} for $${checkoutData.amount.toFixed(2)}/month.`
+                                : `Unlock this post for a one-time payment of $${checkoutData.amount.toFixed(2)}.`
+                            }
+                        </p>
+                        
+                        <div className="space-y-4">
+                            <PayPalCheckout 
+                                amount={checkoutData.amount}
+                                type={checkoutData.type}
+                                targetId={checkoutData.targetId}
+                                onSuccess={handleCheckoutSuccess}
+                                onError={(err) => alert('Payment error: ' + (err.message || 'Unknown error'))}
+                            />
+                            
+                            <p className="text-[10px] text-center text-gray-600 px-4">
+                                By completing the payment, you agree to our Terms of Service. Payments are processed securely via PayPal.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

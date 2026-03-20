@@ -40,9 +40,11 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import postRoutes from './routes/postRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 import messageRoutes from './routes/messageRoutes';
 
 app.use('/api/auth', authRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/creators', userRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
