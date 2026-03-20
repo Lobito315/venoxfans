@@ -2,15 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
+import { Providers } from '../components/Providers';
 import AppShell from '@/components/AppShell';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { PayPalScriptProvider } from '@paypal/react-paypal-js';
-
-const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id';
-
-if (typeof window !== 'undefined' && clientId === 'dummy-client-id') {
-  console.warn('Google Client ID is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.');
-}
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -56,13 +49,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
-        <GoogleOAuthProvider clientId={clientId}>
-          <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID }}>
-            <AppShell footer={footer}>
-              {children}
-            </AppShell>
-          </PayPalScriptProvider>
-        </GoogleOAuthProvider>
+        <Providers>
+          <AppShell footer={footer}>
+            {children}
+          </AppShell>
+        </Providers>
       </body>
     </html>
   );
